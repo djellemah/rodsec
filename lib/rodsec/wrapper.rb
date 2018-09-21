@@ -6,7 +6,6 @@ module Rodsec
     extend Fiddle::Importer
 
     dlload 'libmodsecurity.so'
-    NULL = Fiddle::Pointer.new 0
 
     ###########################
     # from modsecurity/modsecurity.h
@@ -84,14 +83,8 @@ module Rodsec
     extern 'int msc_process_logging(Transaction *transaction)'
 
     def self.free_fn_ptr
-      # TODO for debugging only
-      # @free_fn_ptr ||= Fiddle::Pointer[0]
       @free_fn_ptr ||= Fiddle::Function.new Fiddle::RUBY_FREE, [Fiddle::TYPE_VOIDP], Fiddle::TYPE_VOID
     end
-
-    # trying to get intervention free-er
-    # extern '_ZN11modsecurity12interventionL4freeEPNS_25ModSecurityIntervention_tE'
-    # extern 'modsecurity::intervention::free(modsecurity::ModSecurityIntervention_t*)'
 
     # Phase INTERVENTIONS (interleaved)
     #
@@ -103,24 +96,12 @@ module Rodsec
     #     char *log;
     #     int disruptive;
     # } ModSecurityIntervention;
-    # TODO must free url and log
     ModSecurityIntervention_t = struct ['int status', 'int pause', 'char *url', 'char *log', 'int disruptive']
 
     class ModSecurityIntervention < ModSecurityIntervention_t
-      def self.malloc *args
-        inst = super
-
-        # zero these out for aid in debugging
-        inst.status = 0
-        inst.pause = 0
-        inst.url = Fiddle::Pointer[0]
-        inst.log = Fiddle::Pointer[0]
-        inst.disruptive = 0
-
-        # free this when it's garbage collected
-        # inst.instance_variable_get(:@entity).free ||= Wrapper.free_fn_ptr
-        inst.instance_variable_get(:@entity).free ||= Wrapper['msc_free_intervention']
-        inst
+      def initialize( *args )
+        super
+        to_ptr.free = Wrapper['msc_free_intervention']
       end
 
       def log
@@ -133,24 +114,6 @@ module Rodsec
         ptr.to_s unless ptr.null?
       end
 
-      def set_free( ptr )
-        unless ptr.null?
-          ptr.free = Wrapper.free_fn_ptr
-          ptr
-        end
-      end
-
-      # clunky, but the api mallocs and sets these, and we have to free them.
-      def hook_free
-        # these are Fiddle::Pointers, and @entity is a Fiddle::CStructEntity owned
-        # by Fiddle::CStruct which is an ancestor.
-        # Doh! This doesn't work because @entity['url'] are temporaries based on the struct.to_s
-        # set_free @entity['url']
-        # set_free @entity['log']
-
-        self
-      end
-
       def to_h
         @entity.instance_variable_get(:@members).map do |member|
           [member, (send member)]
@@ -160,7 +123,7 @@ module Rodsec
 
     # Check for Intervention
     extern 'int msc_intervention(Transaction *transaction, ModSecurityIntervention *it)'
-    extern 'ModSecurityIntervention * msc_new_intervention()'
+    extern 'ModSecurityIntervention_t * msc_new_intervention()'
     extern 'int msc_free_intervention(ModSecurityIntervention *it)'
   end
 end
