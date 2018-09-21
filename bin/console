@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+# require "bundler/setup"
+$: << "#{__dir__}/../lib"
+require "rodsec"
+
+# You can add fixtures and/or initialization code here to make experimenting easier
+
+require 'pry'
+Pry.start Object.new.extend(Rodsec)
