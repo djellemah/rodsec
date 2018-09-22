@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['John Anderson']
   spec.email         = ['panic@semiosix.com']
 
-  spec.summary       = %q{wrapper for ModSecurity}
-  spec.description   = %q{a ruby ffi wrapper for ModSecurity}
+  spec.summary       = %q{Wrapper for ModSecurity with Rack middleware}
+  spec.description   = %q{A ruby ffi wrapper for ModSecurity that also provides a Rack middleware}
   spec.homepage      = 'http://github.com/djellemah/rodsec'
   spec.license       = 'MIT'
 
