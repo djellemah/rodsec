@@ -3,13 +3,17 @@ require_relative '../rodsec.rb'
 module Rodsec
   # Thanks to rack-contrib/deflect for the basic idea, and some of the docs.
   class Rack
-    attr_reader :options, :log_blk, :logger
-
     # === Required Options:
     #
-    #   :config_dir the directory containing the ModSecurity config and rules files
+    #   :config   Proc, or the directory containing the ModSecurity config files
+    #             modsecurity.conf and crs-setup.conf. If it's a Proc, which
+    #             must return a Rodsec::Ruleset instance containing all the
+    #             rules you want.
     #
     # === Optional Options:
+    #
+    #   :rules    the directory containing the ModSecurity rules files.
+    #             Defaults to ${config}/rules. Ignored if you pass a proc to config
     #
     #   :logger   must respond_to #puts which takes a string. Defaults to a StringIO at #logger
     #
@@ -23,9 +27,9 @@ module Rodsec
     #
     # === Examples:
     #
-    #  use Rodsec::Rack, config_dir: 'your_config_path', log: (mylogger = StringIO.new)
-    #  use Rodsec::Rack, config_dir: 'your_config_path', log_blk: -> src_class, str { my_funky_parse_msi_to_hash str }
-    def initialize app, config_dir:, logger: nil, log_blk: nil
+    #  use Rodsec::Rack, config: 'your_config_path', log: (mylogger = StringIO.new)
+    #  use Rodsec::Rack, config: 'your_config_path', log_blk: -> src_class, str { my_funky_parse_msi_to_hash str }
+    def initialize app, config:, rules: nil, logger: nil, log_blk: nil
       @app = app
 
       @log_blk = log_blk || -> _tag, str{self.logger.puts str}
@@ -34,12 +38,24 @@ module Rodsec
       @logger = logger || StringIO.new
 
       @log_blk.call self.class, "#{self.class} starting with #{@msc.version_info}"
-      read_config config_dir
+
+      set_rules config, rules
     end
 
-    def read_config config_dir
-      config_dir = Pathname config_dir
-      rules_dir = config_dir + 'rules'
+    attr_reader :log_blk, :logger
+
+    protected def set_rules config, rules
+      case config
+      when Proc
+        @rules = config.call
+      else
+        @rules = read_config config, rules
+      end
+    end
+
+    protected def read_config config, rules
+      config_dir = Pathname config
+      rules_dir = Pathname(rules || config_dir + 'rules')
 
       # NOTE the first two config files MUST be loaded before the rules files
       config_rules = Rodsec::RuleSet.new
@@ -49,7 +65,7 @@ module Rodsec
       # Now load the rules files
       rules_files = rules_dir.children.select{|p| p.to_s =~ /.*conf$/}.sort
 
-      @rules = rules_files.reduce config_rules do |ax, fn|
+      rules_files.reduce config_rules do |ax, fn|
         # ruby 2.3.x syntax :-|
         begin
           log_blk.call self.class, "loading rules file: #{fn}"

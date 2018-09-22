@@ -35,7 +35,8 @@ RSpec.describe Rodsec::Rack do
   end
 
   def mock_rodsec_rack end_app, **options
-    Rodsec::Rack.new end_app, {config_dir: (Pathname __dir__) + 'config', **options}
+    # just point rules to a directory with no *.conf files.
+    Rodsec::Rack.new end_app, {config: (Pathname __dir__) + 'config', rules: __dir__, **options}
   end
 
   let :end_app do MockApp.new end
@@ -52,7 +53,7 @@ RSpec.describe Rodsec::Rack do
   end
 
   describe 'config' do
-    let :app do mock_rodsec_rack end_app, config_dir: @config_dir end
+    let :app do mock_rodsec_rack end_app, config: @config_dir end
 
     it 'fails when config directory not found' do
       @config_dir = '/tmp/not_a_real_directory_hopefully'
@@ -84,7 +85,7 @@ RSpec.describe Rodsec::Rack do
       let :app do mock_rodsec_rack end_app, logger: logger end
 
       it 'puts' do
-        logger.should_receive(:puts).and_call_original
+        logger.should_receive(:puts).at_least(:once).and_call_original
         app.call mock_env random_ip
         # This is somewhat fragile and will probably need updating
         logger.string.should =~ rodsec_start_regex
