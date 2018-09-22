@@ -2,10 +2,6 @@ require "spec_helper"
 
 RSpec.describe Rodsec do
   it "has a version number" do
-    expect(Rodsec::VERSION).not_to be nil
-  end
-
-  it "does something useful" do
-    expect(false).to eq(true)
+    Rodsec::VERSION.should_not be_nil
   end
 end
