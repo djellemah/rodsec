@@ -5,7 +5,9 @@ module Rodsec
   module Wrapper
     extend Fiddle::Importer
 
-    dlload 'libmodsecurity.so'
+    dlext = RbConfig::CONFIG['DLEXT']
+    msc_intervention = dlopen File.join __dir__, "msc_intervention.#{dlext}"
+    dlload msc_intervention, "libmodsecurity.#{dlext}"
 
     ###########################
     # from modsecurity/modsecurity.h
@@ -82,12 +84,18 @@ module Rodsec
     # Phase LOGGING. SecRules 5. Just log the transaction to the registered logger.
     extern 'int msc_process_logging(Transaction *transaction)'
 
+    # Phase INTERVENTIONS (interleaved)
+    #
+    extern 'int msc_intervention(Transaction *transaction, ModSecurityIntervention *it)'
+
+    ###############################
+    # And now we need a little cpp work to access this struct without without spectacularly leaking memory.
+
+    # This isn't used. But ah kept it cos it's purty.
     def self.free_fn_ptr
       @free_fn_ptr ||= Fiddle::Function.new Fiddle::RUBY_FREE, [Fiddle::TYPE_VOIDP], Fiddle::TYPE_VOID
     end
 
-    # Phase INTERVENTIONS (interleaved)
-    #
     # from modsecurity/intervention.h
     # typedef struct ModSecurityIntervention_t {
     #     int status;
@@ -121,8 +129,7 @@ module Rodsec
       end
     end
 
-    # Check for Intervention
-    extern 'int msc_intervention(Transaction *transaction, ModSecurityIntervention *it)'
+    # These two are defined in the msc_intervention extension
     extern 'ModSecurityIntervention_t * msc_new_intervention()'
     extern 'int msc_free_intervention(ModSecurityIntervention *it)'
   end

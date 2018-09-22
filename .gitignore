@@ -10,3 +10,6 @@
 
 # rspec failure tracking
 .rspec_status
+
+# local c extensions
+lib/rodsec/*.so
