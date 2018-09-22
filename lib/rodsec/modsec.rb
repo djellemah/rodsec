@@ -10,7 +10,7 @@ module Rodsec
 
       Wrapper.msc_set_connector_info @msc_ptr, (strptr info_string)
 
-      logger_fn &log_blk if block_given?
+      logger_fn &log_blk
     end
 
     include StringPointers
@@ -35,7 +35,7 @@ module Rodsec
 
         # TODO apparently the value of void_p_data1 can be set somewhere. Dunno if it's at msc level or transaction level.
         @logger_closure = Fiddle::Closure::BlockCaller.new return_type, arg_types do |void_p_data1, log_str_ptr|
-          log_blk&.call log_str_ptr.to_s
+          log_blk.call log_str_ptr.to_s
         end
 
         @logger_fn = Fiddle::Function.new @logger_closure, arg_types, return_type
@@ -58,4 +58,3 @@ module Rodsec
     end
   end
 end
-
