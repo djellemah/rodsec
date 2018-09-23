@@ -20,13 +20,11 @@ module Rodsec
 
     include StringPointers
 
-    # return an intervention object, or nil
-    # TODO see ModSecurity/examples/using_bodies_in_chunks/simple_request.cc:90
-    # TODO maybe this should be thrown out of the various process_xxx calls?
+    # Raise an Intervention(ModSecurityIntervention) if necessary, or return self.
     #
     # ModSecurity will only populate the intervention structure if it detects
     # something 'disruptive' in the SecRules.
-    def intervention!
+    protected def intervention!
       # Check for Intervention
       msi = Wrapper::ModSecurityIntervention.new Wrapper.msc_new_intervention
       rv = Wrapper.msc_intervention txn_ptr, msi
@@ -46,7 +44,6 @@ module Rodsec
       rv == 1 or raise Error, "msc_process_connection failed for #{[client_host, client_port, server_host, server_port].inspect}"
 
       intervention!
-      self
     end
 
     ##################################
@@ -59,7 +56,6 @@ module Rodsec
       rv == 1 or raise Error "msc_process_uri failed for #{[uri, verb, http_version].inspect}"
 
       intervention!
-      self
     end
 
     ##################################
@@ -77,7 +73,6 @@ module Rodsec
       rv == 1 or raise "msc_process_request_headers failed"
 
       intervention!
-      self
     end
 
     ##################################
@@ -87,14 +82,14 @@ module Rodsec
     # NOTE msc_append_request_body can be called several times (it's an append)
     # if necessary. But I can't yet see a need for that.
     def request_body! body_str
-      rv = Wrapper.msc_append_request_body txn_ptr, (strptr body_str.to_s), body_str.bytesize
+      body_str = body_str.to_s
+      rv = Wrapper.msc_append_request_body txn_ptr, (strptr body_str), body_str.bytesize
       rv == 1 or raise Error, "msc_append_request_body failed"
 
       rv = Wrapper.msc_process_request_body txn_ptr
       rv == 1 or raise Error, "msc_process_request_body failed"
 
       intervention!
-      self
     end
 
     # This is probably only used when appending a body in chunks. We don't use it.
@@ -115,8 +110,8 @@ module Rodsec
 
       rv = Wrapper.msc_process_response_headers txn_ptr, (Integer http_status_code), (strptr http_with_version)
       rv == 1 or raise "msc_process_response_headers failed"
+
       intervention!
-      self
     end
 
     # Called after msc_process_response_headers "to inform a new response code"
@@ -126,6 +121,7 @@ module Rodsec
     ##################################
     # Phase RESPONSE_BODY. SecRules 4
     def response_body! body_str
+      body_str = body_str.to_s
       rv = Wrapper.msc_append_response_body txn_ptr, (strptr body_str), body_str.bytesize
       rv == 1 or raise Error, "msc_append_response_body failed"
 
@@ -133,7 +129,6 @@ module Rodsec
       rv == 1 or raise Error, "msc_process_response_body failed"
 
       intervention!
-      self
     end
 
     # Needed if ModSecurity modifies the outgoing body. We don't make use of that.
