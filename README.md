@@ -97,21 +97,8 @@ msc = Rodsec::Modsec.new do |str|
 end
 
 # load config files
-config_rules = Rodsec::RuleSet.new
-config_rules.add_file config_dir + 'modsecurity.conf'
-config_rules.add_file config_dir + 'crs-setup.conf'
-
-# load rules files
-rules_dir = Pathname '.../owasp-modsecurity-crs/rules'
-rules_files = rules_dir.children.select{|p| p.to_s =~ /.*conf$/}.sort
-rule_set = rules_files.reduce config_rules do |ax, file_path|
-  # tag: is optional, and kinda pointless here cos it gets lost in the merge
-  rules = Rodsec::RuleSet.new tag: file_path
-  rules.add_file file_path
-  ax.merge rules
-rescue
-  p oops: $!
-  ax
+rule_set = Rodsec::ReadConfig.call config_dir, rules_dir do |log_str|
+  p oops: log_str
 end
 
 # Now check one, or several, request/response cycles.
