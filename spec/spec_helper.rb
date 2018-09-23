@@ -12,3 +12,8 @@ RSpec.configure do |config|
     c.syntax = %i[should]
   end
 end
+
+# rspec, shutup already about 'deprecated old syntax'. I've already enabled it.
+if RSpec::Mocks::Syntax.instance_variable_defined? :@warn_about_should
+  RSpec::Mocks::Syntax.instance_variable_set :@warn_about_should, false
+end
