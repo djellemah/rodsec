@@ -1,5 +1,3 @@
-require 'pathname'
-
 require_relative 'wrapper'
 require_relative 'string_pointers'
 
@@ -93,9 +91,8 @@ module Rodsec
 
     ##################################
     # Phase REQUEST_BODY.  SecRules 2
-    # optional if the client knows that body is empty
     #
-    # body
+    # body can be a String, or an Enumerable of strings
     def request_body! body
       enum_of_body(body).each do |body_part|
         body_part = body_part.to_s
@@ -103,6 +100,7 @@ module Rodsec
         rv == 1 or raise Error, "msc_append_request_body failed"
       end
 
+      # This MUST be called, otherwise rules aren't triggered.
       rv = Wrapper.msc_process_request_body txn_ptr
       rv == 1 or raise Error, "msc_process_request_body failed"
 
@@ -137,13 +135,16 @@ module Rodsec
 
     ##################################
     # Phase RESPONSE_BODY. SecRules 4
+    #
+    # body can be a String, or an Enumerable of strings
     def response_body! body
       enum_of_body(body).each do |body_part|
         body_part = body_part.to_s
         rv = Wrapper.msc_append_response_body txn_ptr, (strptr body_part), body_part.bytesize
-        rv == 1 or raise Error, "msc_append_request_body failed"
+        rv == 1 or raise Error, 'msc_append_response_body failed'
       end
 
+      # This MUST be called, otherwise rules aren't triggered
       rv = Wrapper.msc_process_response_body txn_ptr
       rv == 1 or raise Error, "msc_process_response_body failed"
 

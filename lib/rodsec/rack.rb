@@ -62,7 +62,6 @@ module Rodsec
     HTTP_HOST = 'HTTP_HOST'.freeze
     SERVER_PORT = 'SERVER_PORT'.freeze
     HTTP_VERSION = 'HTTP_VERSION'.freeze
-    REQUEST_PATH = 'REQUEST_PATH'.freeze
     REQUEST_METHOD = 'REQUEST_METHOD'.freeze
     SLASH = '/'.freeze
     HTTP_HEADER_RX = /HTTP_(.*)|(CONTENT_.*)/.freeze
@@ -86,7 +85,7 @@ module Rodsec
 
         _, version = env[HTTP_VERSION]&.split(SLASH)
 
-        txn.uri! env[REQUEST_PATH], env[REQUEST_METHOD], version
+        txn.uri! env[REQUEST_URI], env[REQUEST_METHOD], version
       end.call
 
       # request_headers! - another scope for variables
