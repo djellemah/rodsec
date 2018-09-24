@@ -5,12 +5,15 @@ require_relative 'string_pointers'
 
 module Rodsec
   class Transaction
-    def initialize msc, ruleset
+    # txn_log_tag must be convertible to a string. Defaults to self.object_id.to_s
+    # it shows up in as the first argument passed to Modsec's log_blk.
+    def initialize msc, ruleset, txn_log_tag: nil
       raise Error, "msc must be a #{Modsec}" unless Modsec === msc
       raise Error, "ruleset must be a #{RuleSet}" unless RuleSet === ruleset
 
       @msc, @ruleset = msc, ruleset
-      @txn_ptr = Wrapper.msc_new_transaction msc.msc_ptr, ruleset.rules_ptr, msc.logger_fn
+      @txn_log_tag = Fiddle::Pointer[(txn_log_tag || object_id).to_s]
+      @txn_ptr = Wrapper.msc_new_transaction msc.msc_ptr, ruleset.rules_ptr, @txn_log_tag
       @txn_ptr.free = Wrapper['msc_transaction_cleanup']
     end
 

@@ -33,9 +33,9 @@ module Rodsec
         return_type = Fiddle::TYPE_VOID
         arg_types = Fiddle::TYPE_VOIDP, Fiddle::TYPE_VOIDP
 
-        # TODO apparently the value of void_p_data1 can be set somewhere. Dunno if it's at msc level or transaction level.
-        @logger_closure = Fiddle::Closure::BlockCaller.new return_type, arg_types do |void_p_data1, log_str_ptr|
-          log_blk.call log_str_ptr.to_s
+        # txn_log_tag is set in the contructor of Transaction.
+        @logger_closure = Fiddle::Closure::BlockCaller.new return_type, arg_types do |txn_log_tag, log_str_ptr|
+          log_blk.call txn_log_tag.to_s, log_str_ptr.to_s
         end
 
         @logger_fn = Fiddle::Function.new @logger_closure, arg_types, return_type

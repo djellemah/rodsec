@@ -17,10 +17,10 @@ module Rodsec
     #
     #   :logger   must respond_to #puts which takes a string. Defaults to a StringIO at #logger
     #
-    #   :log_blk  a callable that takes |src_class,string| Defaults to sending
+    #   :log_blk  a callable that takes |tag,string| Defaults to sending
     #             only the string to logger. The ModSecurity logs are highly
-    #             structured and you might want to parse the, so the src_class
-    #             helps disambiguate the source of the logs. Making parsing easier.
+    #             structured and you might want to parse them, so the tag
+    #             helps disambiguate the source of the logs.
     #
     #   ? :msi_blk  called with [status, headers, body] if there's an intervention from ModSecurity.
     #
@@ -33,7 +33,7 @@ module Rodsec
       @app = app
 
       @log_blk = log_blk || -> _tag, str{self.logger.puts str}
-      @msc = Rodsec::Modsec.new{|str| @log_blk.call Rodsec::Modsec, str}
+      @msc = Rodsec::Modsec.new{|tag,str| @log_blk.call tag, str}
 
       @logger = logger || StringIO.new
 
@@ -55,6 +55,7 @@ module Rodsec
       end
     end
 
+    REQUEST_URI = 'REQUEST_URI'.freeze
     REMOTE_HOST = 'REMOTE_HOST'.freeze
     REMOTE_ADDR = 'REMOTE_ADDR'.freeze
     SERVER_NAME = 'SERVER_NAME'.freeze
@@ -69,7 +70,7 @@ module Rodsec
     EMPTY = String.new.freeze
 
     def call env
-      txn = Rodsec::Transaction.new @msc, @rules
+      txn = Rodsec::Transaction.new @msc, @rules, txn_log_tag: env[REQUEST_URI]
 
       ################
       # incoming
@@ -81,7 +82,6 @@ module Rodsec
       txn.uri! env[REQUEST_PATH], env[REQUEST_METHOD], version
 
       http_headers = env.map do |key,val|
-        # TODO what about Set-Cookie and things like that?
         key =~ /HTTP_(.*)|(CONTENT_.*)/ or next
         header_name = $1 || $2
         dashified = header_name.split(UNDERSCORE).map(&:capitalize).join(DASH)
@@ -123,7 +123,7 @@ module Rodsec
       return status, headers, body
 
     rescue Rodsec::Intervention => iex
-      log_blk.call self.class, iex.msi.log
+      log_blk.call :intervention, iex.msi.log
       # rack interface specification says we have to call close on the body, if
       # it responds to close
       body.respond_to?(:close) && body.close

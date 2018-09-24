@@ -91,19 +91,19 @@ in your ```log_blk:``` lambda on application startup.
 You can also use this gem without rack.
 
 ``` ruby
-msc = Rodsec::Modsec.new do |str|
+msc = Rodsec::Modsec.new do |tag, str|
   # this block will be called with log strings from ModSecurity
-  puts str
+  puts tag, str
 end
 
 # load config files
-rule_set = Rodsec::ReadConfig.call config_dir, rules_dir do |log_str|
-  p oops: log_str
+rule_set = Rodsec::ReadConfig.read_config config_dir, rules_dir do |tag, str|
+  p tag => str
 end
 
 # Now check one, or several, request/response cycles.
 # You'll need a new Transaction instance for each cycle.
-txn = Rodsec::Transaction.new msc, rule_set
+txn = Rodsec::Transaction.new msc, rule_set, txn_log_tag: 'my_first_transaction'
 begin
   # method calls MUST be in this order
   txn.connection! ...
