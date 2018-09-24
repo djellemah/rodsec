@@ -107,10 +107,14 @@ module Rodsec
       env[RACK_INPUT].tap do |rack_input|
         # ruby-2.3 syntax :-|
         begin
-          # TODO what about a DOS from a very large body?
+          # What about a DOS from a very large body?
+          #
+          # Rack spec says rack.input must be rewindable at the http-server
+          # level, so it's all in memory by now anyway, nothing we can do to
+          # affect that here.
           txn.request_body! rack_input
         ensure
-          # Have to rewind afterwards, otherwise other layers can't get the content
+          # Have to rewind input, otherwise other rack apps can't get the content
           rack_input.rewind
         end
       end
