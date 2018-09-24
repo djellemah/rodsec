@@ -67,4 +67,26 @@ RSpec.describe Transaction do
       ->{subject.response_body! Ɛ}.should_not raise_error
     end
   end
+
+  describe '#enum_of_body' do
+    # protected method, so use send
+
+    it 'handles nil' do
+      subject.send(:enum_of_body, nil).should == ['']
+    end
+
+    it 'handles String' do
+      subject.send(:enum_of_body, 'This is a single stringle').should == ['This is a single stringle']
+    end
+
+    it 'handles Enumerable' do
+      body_parts = YAML.load <<-EOY
+        - On the first day, everyone was optimistic.
+        - On the second day they were cheerful.
+        - By the third day they were running out of water and becoming anxious.
+        - On the fourth day, the horror-movie villain appeared out of the mist.
+      EOY
+      subject.send(:enum_of_body, body_parts).should == body_parts
+    end
+  end
 end

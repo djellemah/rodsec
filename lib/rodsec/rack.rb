@@ -98,8 +98,16 @@ module Rodsec
       # otherwise ModSecurity never triggers the rules, even though ModSecurity
       # can detect something dodgy in the headers. That needs what they call
       # self-contained mode.
-      # TODO what about a DOS from a very large body?
-      txn.request_body! body
+      env[RACK_INPUT].tap do |rack_input|
+        # ruby-2.3 syntax :-|
+        begin
+          # TODO what about a DOS from a very large body?
+          txn.request_body! rack_input
+        ensure
+          # Have to rewind afterwards, otherwise other layers can't get the content
+          rack_input.rewind
+        end
+      end
 
       ################
       # chain
@@ -109,9 +117,9 @@ module Rodsec
       # outgoing
       txn.response_headers! status, env[HTTP_VERSION], headers
 
-      # TODO do the append_body calls
       # TODO handle hijacking? Not sure.
-      txn.response_body! body.each_with_object(String.new){|l,buf| buf << l}
+      # body is an Enumerable, which response_body! will handle
+      txn.response_body! body
 
       # Logging. From ModSecurity's point of view this could be in a separate
       # thread. Dunno how rack will handle that though. Also, there's no way to

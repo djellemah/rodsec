@@ -78,16 +78,30 @@ module Rodsec
       intervention!
     end
 
+    protected def enum_of_body body
+      case
+      when NilClass === body
+        ['']
+      when String === body
+        [body]
+      when body.respond_to?(:each)
+        body
+      else
+        raise "dunno about #{body}"
+      end
+    end
+
     ##################################
     # Phase REQUEST_BODY.  SecRules 2
     # optional if the client knows that body is empty
     #
-    # NOTE msc_append_request_body can be called several times (it's an append)
-    # if necessary. But I can't yet see a need for that.
-    def request_body! body_str
-      body_str = body_str.to_s
-      rv = Wrapper.msc_append_request_body txn_ptr, (strptr body_str), body_str.bytesize
-      rv == 1 or raise Error, "msc_append_request_body failed"
+    # body
+    def request_body! body
+      enum_of_body(body).each do |body_part|
+        body_part = body_part.to_s
+        rv = Wrapper.msc_append_request_body txn_ptr, (strptr body_part), body_part.bytesize
+        rv == 1 or raise Error, "msc_append_request_body failed"
+      end
 
       rv = Wrapper.msc_process_request_body txn_ptr
       rv == 1 or raise Error, "msc_process_request_body failed"
@@ -123,10 +137,12 @@ module Rodsec
 
     ##################################
     # Phase RESPONSE_BODY. SecRules 4
-    def response_body! body_str
-      body_str = body_str.to_s
-      rv = Wrapper.msc_append_response_body txn_ptr, (strptr body_str), body_str.bytesize
-      rv == 1 or raise Error, "msc_append_response_body failed"
+    def response_body! body
+      enum_of_body(body).each do |body_part|
+        body_part = body_part.to_s
+        rv = Wrapper.msc_append_response_body txn_ptr, (strptr body_part), body_part.bytesize
+        rv == 1 or raise Error, "msc_append_request_body failed"
+      end
 
       rv = Wrapper.msc_process_response_body txn_ptr
       rv == 1 or raise Error, "msc_process_response_body failed"
