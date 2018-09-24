@@ -162,7 +162,7 @@ RSpec.describe Rodsec::Rack do
       it 'has correct response triple' do
         status, headers, body = app.call mock_env random_ip
         status.should == 892
-        body.should == ["Forbidden\n"]
+        body.should == []
       end
     end
 
@@ -216,7 +216,14 @@ RSpec.describe Rodsec::Rack do
       it 'has correct response triple' do
         status, headers, body = app.call mock_env random_ip
         status.should == 892
-        body.should == ["Forbidden\n"]
+        body.should == []
+      end
+
+      it 'has forbidden response triple' do
+        msi.status = 403
+        status, headers, body = app.call mock_env random_ip
+        status.should == 403
+        body.should == ["Forbidden"]
       end
     end
   end

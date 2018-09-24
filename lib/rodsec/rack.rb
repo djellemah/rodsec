@@ -143,7 +143,7 @@ module Rodsec
       # it responds to close
       body.respond_to?(:close) && body.close
       # Intervention!
-      return iex.msi.status, {'Content-Type' => 'text/plain'}, ["Forbidden\n"]
+      return iex.msi.status, {'Content-Type' => 'text/plain'}, [ ::Rack::Utils::HTTP_STATUS_CODES[iex.msi.status] ].compact
     end
   end
 end
