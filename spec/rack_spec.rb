@@ -127,8 +127,13 @@ RSpec.describe Rodsec::Rack do
     let :app do mock_rodsec_rack local_app end
 
     before :each do
-      # this is the first call after body exists
-      Rodsec::Transaction.any_instance.should_receive(:request_body!).with(text)
+      Rodsec::Transaction.any_instance.should_receive :request_body! do |_instance, rack_input|
+        # read the input. It should now be rewound by Rodsec::Rack so that local_app can read it
+        rack_input.read.should == text
+        rack_input.read.should == ''
+        rack_input.should_receive(:rewind).and_call_original
+        # nothing depends on the return value from #request_body!, so no need for and_wrap_original
+      end
     end
 
     it 'other rack-apps can read it' do

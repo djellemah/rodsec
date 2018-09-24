@@ -65,36 +65,43 @@ module Rodsec
     REQUEST_PATH = 'REQUEST_PATH'.freeze
     REQUEST_METHOD = 'REQUEST_METHOD'.freeze
     SLASH = '/'.freeze
+    HTTP_HEADER_RX = /HTTP_(.*)|(CONTENT_.*)/.freeze
     DASH = '-'.freeze
     UNDERSCORE = '_'.freeze
     EMPTY = String.new.freeze
+
+    RACK_INPUT = 'rack.input'.freeze
 
     def call env
       txn = Rodsec::Transaction.new @msc, @rules, txn_log_tag: env[REQUEST_URI]
 
       ################
       # incoming
-      remote_addr = env[REMOTE_HOST] || env[REMOTE_ADDR]
-      server_addr = env[HTTP_HOST] || env[SERVER_NAME]
-      txn.connection! remote_addr, 0, server_addr, (env[SERVER_PORT] || 0)
 
-      _, version = env[HTTP_VERSION]&.split(SLASH)
-      txn.uri! env[REQUEST_PATH], env[REQUEST_METHOD], version
+      # uri! scope for variables
+      lambda do
+        remote_addr = env[REMOTE_HOST] || env[REMOTE_ADDR]
+        server_addr = env[HTTP_HOST] || env[SERVER_NAME]
+        txn.connection! remote_addr, 0, server_addr, (env[SERVER_PORT] || 0)
 
-      http_headers = env.map do |key,val|
-        key =~ /HTTP_(.*)|(CONTENT_.*)/ or next
-        header_name = $1 || $2
-        dashified = header_name.split(UNDERSCORE).map(&:capitalize).join(DASH)
-        [dashified, val]
-      end.compact.to_h
-      txn.request_headers! http_headers
+        _, version = env[HTTP_VERSION]&.split(SLASH)
 
-      # Have to rewind afterwards, otherwise other layers can't get the content
-      rack_input = env['rack.input']
-      body = rack_input.read
-      rack_input.rewind
+        txn.uri! env[REQUEST_PATH], env[REQUEST_METHOD], version
+      end.call
 
-      # Looks like this MUST be called (even with an empty body is fine),
+      # request_headers! - another scope for variables
+      lambda do
+        http_headers = env.map do |key,val|
+          key =~ HTTP_HEADER_RX or next
+          header_name = $1 || $2
+          dashified = header_name.split(UNDERSCORE).map(&:capitalize).join(DASH)
+          [dashified, val]
+        end.compact.to_h
+
+        txn.request_headers! http_headers
+      end.call
+
+      # request_body! MUST be called (even with an empty body is fine),
       # otherwise ModSecurity never triggers the rules, even though ModSecurity
       # can detect something dodgy in the headers. That needs what they call
       # self-contained mode.
@@ -110,7 +117,7 @@ module Rodsec
       end
 
       ################
-      # chain
+      # rack chain
       status, headers, body = @app.call env
 
       ################
