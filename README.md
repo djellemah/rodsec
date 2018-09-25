@@ -121,6 +121,10 @@ rescue Rodsec::Intervention => iex
 end
 ```
 
+## Acknowledgements
+
+Thanks to [NETSTOCK](https://www.netstock.co/) for funding development.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run
