@@ -13,3 +13,4 @@
 
 # local c extensions
 lib/rodsec/*.so
+lib/rodsec/modsec_lib.rb

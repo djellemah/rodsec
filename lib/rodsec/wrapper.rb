@@ -1,13 +1,15 @@
 require 'fiddle'
 require 'fiddle/import'
 
+require_relative 'modsec_lib.rb'
+
 module Rodsec
   module Wrapper
     extend Fiddle::Importer
 
     dlext = RbConfig::CONFIG['DLEXT']
     msc_intervention = dlopen File.join __dir__, "msc_intervention.#{dlext}"
-    dlload msc_intervention, "libmodsecurity.#{dlext}"
+    dlload msc_intervention, MODSECURITY_SO_PATH
 
     ###########################
     # from modsecurity/modsecurity.h
