@@ -11,6 +11,9 @@ module Rodsec
     msc_intervention = dlopen File.join __dir__, "msc_intervention.#{dlext}"
     dlload msc_intervention, MODSECURITY_SO_PATH
 
+    # required library version - RubyGems style
+    REQUIRED_MODSECURITY_VERSION = '~> 3.0.2'
+
     ###########################
     # from modsecurity/modsecurity.h
     typealias 'ModSecurity', 'void'
@@ -26,6 +29,27 @@ module Rodsec
     # see ModSecurity/headers/modsecurity/modsecurity.h:221
     typealias 'ModSecLogCb', 'void (*) (void *, const void *)'
     extern 'void msc_set_log_cb(ModSecurity *msc, ModSecLogCb cb)'
+
+    # make sure the version of the library matches the version we need NOTE this
+    # duplicates some of the code in Rodsec::Modsec#version_info. But we need an
+    # instance of msc to get the version, and it's better to check the version
+    # here. lambda is just for local variable scoping.
+    lambda do
+      msc_ptr = Wrapper.msc_init
+      msc_ptr.free = Wrapper['msc_cleanup']
+
+      # This is the ModSecurity version required by this gem, in RubyGems format.
+      required_version = Gem::Requirement.new REQUIRED_MODSECURITY_VERSION
+      # parse actual version from library info
+      version_info = (Wrapper.msc_who_am_i msc_ptr).to_s
+      /v([\-\.\d]+)/ =~ version_info
+      actual_version = Gem::Version.new $1
+
+      # check that the library meets the required version
+      unless required_version.satisfied_by? actual_version
+        raise "#{Rodsec} needs ModSecurity #{required_version}, which doesn't match '#{version_info}' from #{Rodsec::MODSECURITY_SO_PATH}"
+      end
+    end.call
 
     ###########################
     # from modsecurity/rules.h
