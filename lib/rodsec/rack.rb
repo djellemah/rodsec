@@ -22,8 +22,6 @@ module Rodsec
     #             structured and you might want to parse them, so the tag
     #             helps disambiguate the source of the logs.
     #
-    #   ? :msi_blk  called with [status, headers, body] if there's an intervention from ModSecurity.
-    #
     #
     # === Examples:
     #
@@ -32,10 +30,9 @@ module Rodsec
     def initialize app, config:, rules: nil, logger: nil, log_blk: nil
       @app = app
 
+      @logger = logger || StringIO.new
       @log_blk = log_blk || -> _tag, str{self.logger.puts str}
       @msc = Rodsec::Modsec.new{|tag,str| @log_blk.call tag, str}
-
-      @logger = logger || StringIO.new
 
       @log_blk.call self.class, "#{self.class} starting with #{@msc.version_info}"
 
