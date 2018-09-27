@@ -33,7 +33,8 @@ fn = Proc.new do |env|
     body = YAML.load_file Pathname(__dir__) + 'body.yml'
     ['200', {'Content-Type' => 'text/plain'}, body]
   else
-    ['200', {}, []]
+    # older rack eg 1.4.7 Lint insists on a Content-Type here
+    ['200', {'Content-Type' => 'text/plain'}, ["This is a nonspecific response."]]
   end
 end
 

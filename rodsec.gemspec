@@ -31,10 +31,10 @@ Gem::Specification.new do |spec|
 
   spec.extensions << %q[ext/msc_intervention/extconf.rb]
 
+  spec.add_dependency 'rack', '>= 1.4.7'
   spec.add_development_dependency 'bundler', '~> 1.15'
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'pry'
-  spec.add_development_dependency 'rack', '~> 2'
   spec.add_development_dependency 'rake-compiler', '>= 1.0.5'
 end
