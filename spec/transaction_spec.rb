@@ -1,3 +1,5 @@
+require 'yaml'
+
 require 'spec_helper'
 require 'rodsec/transaction'
 
