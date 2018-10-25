@@ -89,6 +89,13 @@ module Rodsec
       end
     end
 
+    protected def truncate_inspect obj
+      case obj
+      when String; obj[0...120].inspect
+      else obj.inspect
+      end
+    end
+
     ##################################
     # Phase REQUEST_BODY.  SecRules 2
     #
@@ -97,7 +104,7 @@ module Rodsec
       enum_of_body(body).each do |body_part|
         body_part = body_part.to_s
         rv = Wrapper.msc_append_request_body txn_ptr, (strptr body_part), body_part.bytesize
-        rv == 1 or raise Error, "msc_append_request_body failed"
+        rv == 1 or raise Error, "msc_append_request_body failed for #{truncate_inspect body_part}"
       end
 
       # This MUST be called, otherwise rules aren't triggered.

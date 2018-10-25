@@ -91,4 +91,19 @@ RSpec.describe Transaction do
       subject.send(:enum_of_body, body_parts).should == body_parts
     end
   end
+
+  describe '#truncate_inspect' do
+    it 'inspects shortish string' do
+      subject.send(:truncate_inspect, "hello there").should == %q("hello there")
+    end
+
+    it 'truncates longish string' do
+      long = '=' * 400
+      subject.send(:truncate_inspect, long).should == %Q("#{'=' * 120}")
+    end
+
+    it 'inspects other objects' do
+      subject.send(:truncate_inspect, [8,1,9,2]).should == "[8, 1, 9, 2]"
+    end
+  end
 end
