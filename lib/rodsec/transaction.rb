@@ -147,13 +147,22 @@ module Rodsec
     def response_body! body
       enum_of_body(body).each do |body_part|
         body_part = body_part.to_s
-        rv = Wrapper.msc_append_response_body txn_ptr, (strptr body_part), body_part.bytesize
-        rv == 1 or raise Error, 'msc_append_response_body failed'
+
+        # This return value works differently to all the other msc_ calls.
+        #  0 means
+        #    body too large, so it was only partially processed;
+        #    or
+        #    body too large and and intervention is needed.
+        #
+        #  1 means everything went fine
+        #
+        # so we ignore the non-useful return code and rely on intervention! below
+        Wrapper.msc_append_response_body txn_ptr, (strptr body_part), body_part.bytesize
       end
 
       # This MUST be called, otherwise rules aren't triggered
       rv = Wrapper.msc_process_response_body txn_ptr
-      rv == 1 or raise Error, "msc_process_response_body failed"
+      rv == 1 or raise Error, 'msc_process_response_body failed'
 
       intervention!
     end

@@ -70,6 +70,55 @@ RSpec.describe Transaction do
     end
   end
 
+  describe '#response_body!' do
+    LARGE_BODY_SIZE = 512
+
+    let :frag do "Lorem Ipsum Dolor Sit Amet" end
+
+    let :large_body do
+      buf = String.new
+      buf += frag while buf.size < LARGE_BODY_SIZE
+      buf
+    end
+
+    describe 'reject' do
+      let :txn do
+        rule_set.add "SecResponseBodyLimit #{LARGE_BODY_SIZE}"
+        rule_set.add 'SecResponseBodyLimitAction Reject'
+        txn = described_class.new msc, rule_set
+        # make sure it actually processes the body
+        txn.response_headers! "Content-Type" => "text/plain"
+        txn
+      end
+
+      it 'raises on large bodies' do
+        ->{txn.response_body! large_body}.should raise_error(Rodsec::Intervention)
+      end
+
+      it 'no raise on normal bodies' do
+        ->{txn.response_body! frag}.should_not raise_error
+      end
+    end
+
+    describe 'partial' do
+      let :txn do
+        rule_set.add "SecResponseBodyLimit #{LARGE_BODY_SIZE}"
+        txn = described_class.new msc, rule_set
+        # make sure it actually processes the body
+        txn.response_headers! "Content-Type" => "text/plain"
+        txn
+      end
+
+      it 'no raise on large bodies' do
+        ->{txn.response_body! large_body}.should_not raise_error
+      end
+
+      it 'no raise on normal bodies' do
+        ->{txn.response_body! frag}.should_not raise_error
+      end
+    end
+  end
+
   describe '#enum_of_body' do
     # protected method, so use send
 
