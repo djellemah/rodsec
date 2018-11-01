@@ -34,12 +34,14 @@ Or install it yourself as:
 
 ### ModSecurity config
 
-Copy ```spec/config/modsecurity.conf``` and ```spec/config/crs-setup.conf``` into a config directory
-in your app somewhere. These are pre-configured to signal an intervention on dodgy requests or
-responses - the rack middleware in this gem returns a 403 "Forbidden" in those cases.
+Copy `spec/config/modsecurity.conf`, `spec/config/crs-setup.conf`, and
+`spec/config/unicode.mapping` into a config directory in your app somewhere.
+These are pre-configured to signal an intervention on dodgy requests or
+responses - the rack middleware in this gem returns a 403 "Forbidden" in those
+cases.
 
 You should be able to use the config files as-is. Possibly decrease the paranoia
-level in ```crs-setup.conf``` from 3 to 1 or 2.
+level in `crs-setup.conf` from 3 to 1 or 2.
 
 Then you'll need a ruleset - start with the
 [OWASP CRS](https://github.com/SpiderLabs/owasp-modsecurity-crs/).
@@ -50,6 +52,7 @@ Easiest is a directory structure like this:
 config/
   modsecurity.conf
   crs-setup.conf
+  unicode.mapping
   rules/
     # copy files from OWASP CRS rules/*
     REQUEST-920-PROTOCOL-ENFORCEMENT.conf
