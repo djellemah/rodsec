@@ -12,7 +12,7 @@ module Rodsec
     dlload msc_intervention, MODSECURITY_SO_PATH
 
     # required library version - RubyGems style
-    REQUIRED_MODSECURITY_VERSION = '~> 3.0.2'
+    REQUIRED_MODSECURITY_VERSION = '~> 3.0.3'
 
     ###########################
     # from modsecurity/modsecurity.h
