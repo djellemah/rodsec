@@ -1,5 +1,8 @@
 # ChangeLog
 
+## 0.0.5
+- ModSecurity-3.0.3 released, so specify that in dependencies
+
 ## 0.0.4
 - remove workaround for unicode.mapping error - fixed upstream
 - msc_append_response_body 0/1 return value
